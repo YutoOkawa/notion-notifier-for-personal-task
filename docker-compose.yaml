@@ -1,0 +1,11 @@
+services:
+  notifier:
+    build: .
+    environment:
+      - NOTION_API_TOKEN=${NOTION_API_TOKEN}
+      - NOTION_DATABASE_ID=${NOTION_DATABASE_ID}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - RUN_ON_STARTUP=false
+    volumes:
+      - ./config.yaml:/etc/config/notion-notifier/config.yaml:ro
+    restart: unless-stopped
