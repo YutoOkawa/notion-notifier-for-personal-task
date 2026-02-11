@@ -10,4 +10,4 @@ discord:
 
 notification:
   days_before: 3
-  check_schedule: "0 12 * * *"  # 毎日正午12時 (JST)
+  check_schedule: "0 3 * * *"  # 毎日 UTC 03:00 (JST 12:00)

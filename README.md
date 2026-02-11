@@ -5,7 +5,7 @@ Notion の Personal Tasks データベースから締切が近いタスクを取
 ## 機能
 
 - 締切日の N 日前からタスクを通知
-- 毎日正午に自動チェック
+- 毎日正午(JST)に自動チェック
 - Discord Webhook による通知
 
 ## セットアップ
@@ -25,7 +25,7 @@ export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
 ```yaml
 notification:
   days_before: 3              # 締切の何日前から通知するか
-  check_schedule: "0 12 * * *"  # cron形式 (毎日12時)
+  check_schedule: "0 3 * * *"  # cron形式 (UTC 03:00 = JST 12:00)
 ```
 
 ### 3. 実行
