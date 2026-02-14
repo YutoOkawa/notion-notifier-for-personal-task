@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notion-notifier
+  namespace: default
+  labels:
+    app: notion-notifier
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: notion-notifier
+  template:
+    metadata:
+      labels:
+        app: notion-notifier
+    spec:
+      containers:
+        - name: notion-notifier
+          image: notion-notifier:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-config"
+            - "/etc/config/notion-notifier/config.yaml"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config/notion-notifier
+              readOnly: true
+          env:
+            - name: NOTION_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: notion-notifier-secret
+                  key: NOTION_API_TOKEN
+            - name: NOTION_DATABASE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: notion-notifier-secret
+                  key: NOTION_DATABASE_ID
+            - name: DISCORD_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: notion-notifier-secret
+                  key: DISCORD_WEBHOOK_URL
+            - name: RUN_ON_STARTUP
+              value: "true"
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "10m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+      volumes:
+        - name: config-volume
+          configMap:
+            name: notion-notifier-config

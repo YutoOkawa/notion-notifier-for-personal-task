@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notion-notifier-config
+  namespace: default
+data:
+  config.yaml: |
+    server:
+      port: 8080
+
+    notion:
+      api_token: "${NOTION_API_TOKEN}"
+      database_id: "${NOTION_DATABASE_ID}"
+
+    discord:
+      webhook_url: "${DISCORD_WEBHOOK_URL}"
+
+    notification:
+      days_before: 3
+      check_schedule: "0 3 * * *"  # 毎日 UTC 03:00 (JST 12:00)

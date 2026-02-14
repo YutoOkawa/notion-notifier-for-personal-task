@@ -1,0 +1,48 @@
+version: '3'
+
+vars:
+  IMAGE_NAME: notion-notifier
+  VERSION:
+    sh: cat VERSION 2>/dev/null || echo "1.0.0"
+  FULL_IMAGE_NAME: "{{.IMAGE_NAME}}:{{.VERSION}}"
+
+tasks:
+  build:
+    desc: Build the Docker image locally
+    cmds:
+      - echo "Building {{.FULL_IMAGE_NAME}}"
+      - docker build -t {{.FULL_IMAGE_NAME}} .
+
+  transfer:
+    desc: Transfer image to Mac mini and import to k3d via SSH
+    cmds:
+      - echo "Transferring {{.FULL_IMAGE_NAME}} to mac-mini.local..."
+      - docker save {{.FULL_IMAGE_NAME}} | ssh mac-mini.local "docker load && k3d image import {{.FULL_IMAGE_NAME}} -c mac-mini-cluster"
+
+  apply:
+    desc: Apply Kubernetes manifests
+    cmds:
+      - ./scripts/deploy_k8s.sh {{.VERSION}}
+
+  deploy:
+    desc: Build, transfer, and deploy to Kubernetes
+    cmds:
+      - task: build
+      - task: transfer
+      - task: apply
+      - echo "Deployed version {{.VERSION}} successfully"
+
+  bump:patch:
+    desc: Bump patch version (0.0.X)
+    cmds:
+      - ./scripts/bump_version.sh patch
+
+  bump:minor:
+    desc: Bump minor version (0.X.0)
+    cmds:
+      - ./scripts/bump_version.sh minor
+
+  bump:major:
+    desc: Bump major version (X.0.0)
+    cmds:
+      - ./scripts/bump_version.sh major
