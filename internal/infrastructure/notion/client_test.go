@@ -96,7 +96,7 @@ func TestClient_pageToTask(t *testing.T) {
 		},
 	}
 
-	task := client.pageToTask(p)
+	task := client.pageToTask(p, nil)
 
 	if task.ID != "task-123" {
 		t.Errorf("expected ID 'task-123', got '%s'", task.ID)

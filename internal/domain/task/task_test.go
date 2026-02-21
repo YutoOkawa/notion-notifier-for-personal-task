@@ -52,7 +52,7 @@ func TestTask_IsApproachingDeadline(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task := NewTask("1", "Test Task", tt.dueDate, StatusNotStarted)
+			task := NewTask("1", "Test Task", "Test Project", tt.dueDate, StatusNotStarted)
 			got := task.IsApproachingDeadline(tt.daysBeforeDeadline)
 			if got != tt.want {
 				t.Errorf("IsApproachingDeadline() = %v, want %v", got, tt.want)
@@ -91,7 +91,7 @@ func TestTask_IsOverdue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task := NewTask("1", "Test Task", tt.dueDate, StatusNotStarted)
+			task := NewTask("1", "Test Task", "Test Project", tt.dueDate, StatusNotStarted)
 			got := task.IsOverdue()
 			if got != tt.want {
 				t.Errorf("IsOverdue() = %v, want %v", got, tt.want)
@@ -114,7 +114,7 @@ func TestTask_IsNotificationTarget(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task := NewTask("1", "Test Task", nil, tt.status)
+			task := NewTask("1", "Test Task", "Test Project", nil, tt.status)
 			got := task.IsNotificationTarget()
 			if got != tt.want {
 				t.Errorf("IsNotificationTarget() = %v, want %v", got, tt.want)

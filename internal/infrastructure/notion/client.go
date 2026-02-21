@@ -105,13 +105,30 @@ func (c *Client) FetchTasksWithUpcomingDeadlines(ctx context.Context, daysBefore
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	return c.convertToTasks(result.Results), nil
+	projectIDs := make(map[string]bool)
+	for _, p := range result.Results {
+		if len(p.Properties.Project.Relation) > 0 {
+			projectIDs[p.Properties.Project.Relation[0].ID] = true
+		}
+	}
+
+	projectNames := make(map[string]string)
+	for id := range projectIDs {
+		name, err := c.fetchPageTitle(ctx, id)
+		if err != nil {
+			projectNames[id] = "Personal"
+		} else {
+			projectNames[id] = name
+		}
+	}
+
+	return c.convertToTasks(result.Results, projectNames), nil
 }
 
-func (c *Client) convertToTasks(pages []page) []*task.Task {
+func (c *Client) convertToTasks(pages []page, projectNames map[string]string) []*task.Task {
 	tasks := make([]*task.Task, 0, len(pages))
 	for _, p := range pages {
-		t := c.pageToTask(p)
+		t := c.pageToTask(p, projectNames)
 		if t != nil {
 			tasks = append(tasks, t)
 		}
@@ -119,7 +136,7 @@ func (c *Client) convertToTasks(pages []page) []*task.Task {
 	return tasks
 }
 
-func (c *Client) pageToTask(p page) *task.Task {
+func (c *Client) pageToTask(p page, projectNames map[string]string) *task.Task {
 	name := ""
 	if title := p.Properties.TaskName; title.Title != nil && len(title.Title) > 0 {
 		name = title.Title[0].PlainText
@@ -142,7 +159,12 @@ func (c *Client) pageToTask(p page) *task.Task {
 		}
 	}
 
-	return task.NewTask(p.ID, name, dueDate, status)
+	projectName := "Personal"
+	if len(p.Properties.Project.Relation) > 0 {
+		projectName = projectNames[p.Properties.Project.Relation[0].ID]
+	}
+
+	return task.NewTask(p.ID, name, projectName, dueDate, status)
 }
 
 type queryResponse struct {
@@ -155,9 +177,18 @@ type page struct {
 }
 
 type properties struct {
-	TaskName titleProperty  `json:"Task name"`
-	Due      dateProperty   `json:"Due"`
-	Status   statusProperty `json:"Status"`
+	TaskName titleProperty    `json:"Task name"`
+	Due      dateProperty     `json:"Due"`
+	Status   statusProperty   `json:"Status"`
+	Project  relationProperty `json:"Project"`
+}
+
+type relationProperty struct {
+	Relation []relationValue `json:"relation"`
+}
+
+type relationValue struct {
+	ID string `json:"id"`
 }
 
 type titleProperty struct {
@@ -197,4 +228,41 @@ func parseDueDate(s string) *time.Time {
 		return &t
 	}
 	return nil
+}
+
+func (c *Client) fetchPageTitle(ctx context.Context, pageID string) (string, error) {
+	url := fmt.Sprintf("%s/pages/%s", notionBaseURL, pageID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+c.apiToken)
+	req.Header.Set("Notion-Version", notionAPIVersion)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to fetch page: %d", resp.StatusCode)
+	}
+
+	var pageResp struct {
+		Properties map[string]struct {
+			Type  string     `json:"type"`
+			Title []richText `json:"title"`
+		} `json:"properties"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&pageResp); err != nil {
+		return "", err
+	}
+
+	for _, prop := range pageResp.Properties {
+		if prop.Type == "title" && len(prop.Title) > 0 {
+			return prop.Title[0].PlainText, nil
+		}
+	}
+	return "Personal", nil
 }

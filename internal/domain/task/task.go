@@ -12,18 +12,20 @@ const (
 )
 
 type Task struct {
-	ID      string
-	Name    string
-	DueDate *time.Time
-	Status  Status
+	ID          string
+	Name        string
+	ProjectName string
+	DueDate     *time.Time
+	Status      Status
 }
 
-func NewTask(id, name string, dueDate *time.Time, status Status) *Task {
+func NewTask(id, name, projectName string, dueDate *time.Time, status Status) *Task {
 	return &Task{
-		ID:      id,
-		Name:    name,
-		DueDate: dueDate,
-		Status:  status,
+		ID:          id,
+		Name:        name,
+		ProjectName: projectName,
+		DueDate:     dueDate,
+		Status:      status,
 	}
 }
 

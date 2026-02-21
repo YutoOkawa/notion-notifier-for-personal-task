@@ -61,7 +61,12 @@ func (s *NotificationService) buildNotificationMessage(tasks []*task.Task) strin
 			dueText = fmt.Sprintf("🟡 あと%d日", days)
 		}
 
-		sb.WriteString(fmt.Sprintf("- %s: %s\n", t.Name, dueText))
+		projectNameStr := ""
+		if t.ProjectName != "" {
+			projectNameStr = fmt.Sprintf("[%s] ", t.ProjectName)
+		}
+
+		sb.WriteString(fmt.Sprintf("- %s%s: %s\n", projectNameStr, t.Name, dueText))
 	}
 
 	return sb.String()

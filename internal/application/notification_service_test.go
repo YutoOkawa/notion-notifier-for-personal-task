@@ -32,8 +32,8 @@ func TestNotificationService_NotifyUpcomingDeadlines(t *testing.T) {
 	tomorrow := today.Add(24 * time.Hour)
 
 	tasks := []*task.Task{
-		task.NewTask("1", "Task Due Today", &today, task.StatusNotStarted),
-		task.NewTask("2", "Task Due Tomorrow", &tomorrow, task.StatusInProgress),
+		task.NewTask("1", "Task Due Today", "Personal", &today, task.StatusNotStarted),
+		task.NewTask("2", "Task Due Tomorrow", "Work", &tomorrow, task.StatusInProgress),
 	}
 
 	repo := &mockTaskRepo{tasks: tasks}
