@@ -17,6 +17,11 @@ type Task struct {
 	ProjectName string
 	DueDate     *time.Time
 	Status      Status
+	// Reading specific properties
+	TaskType   string
+	StartDate  *time.Time
+	TotalPages int
+	ReadPages  int
 }
 
 func NewTask(id, name, projectName string, dueDate *time.Time, status Status) *Task {
@@ -27,6 +32,39 @@ func NewTask(id, name, projectName string, dueDate *time.Time, status Status) *T
 		DueDate:     dueDate,
 		Status:      status,
 	}
+}
+
+func (t *Task) ExpectedReadPages() int {
+	if t.StartDate == nil {
+		return 0
+	}
+	startY, startM, startD := t.StartDate.Date()
+	nowY, nowM, nowD := time.Now().Date()
+
+	startDate := time.Date(startY, startM, startD, 0, 0, 0, 0, time.UTC)
+	today := time.Date(nowY, nowM, nowD, 0, 0, 0, 0, time.UTC)
+
+	elapsedDays := int(today.Sub(startDate).Hours() / 24)
+	if elapsedDays < 0 {
+		return 0
+	}
+
+	// 1日30ページ
+	expected := (elapsedDays + 1) * 30
+	if expected > t.TotalPages && t.TotalPages > 0 {
+		return t.TotalPages
+	}
+	return expected
+}
+
+func (t *Task) IsReadingPaceDelayed() bool {
+	if t.TaskType != "Study" || t.StartDate == nil || t.TotalPages == 0 {
+		return false
+	}
+	if t.Status == StatusDone || t.Status == StatusArchived {
+		return false
+	}
+	return t.ReadPages < t.ExpectedReadPages()
 }
 
 func (t *Task) IsApproachingDeadline(daysBeforeDeadline int) bool {

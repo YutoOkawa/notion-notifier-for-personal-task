@@ -70,6 +70,42 @@ func (c *Client) FetchTasksWithUpcomingDeadlines(ctx context.Context, daysBefore
 		},
 	}
 
+	return c.queryDatabase(ctx, filter)
+}
+
+// Notion API でタスク種別が Study かつ未完了のタスクを取得する。
+func (c *Client) FetchIncompleteStudyTasks(ctx context.Context) ([]*task.Task, error) {
+	filter := map[string]interface{}{
+		"and": []map[string]interface{}{
+			{
+				"property": "タスク種別",
+				"select": map[string]string{
+					"equals": "Study",
+				},
+			},
+			{
+				"or": []map[string]interface{}{
+					{
+						"property": "Status",
+						"status": map[string]string{
+							"equals": "Not Started",
+						},
+					},
+					{
+						"property": "Status",
+						"status": map[string]string{
+							"equals": "In Progress",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return c.queryDatabase(ctx, filter)
+}
+
+func (c *Client) queryDatabase(ctx context.Context, filter map[string]interface{}) ([]*task.Task, error) {
 	reqBody := map[string]interface{}{
 		"filter": filter,
 	}
@@ -164,7 +200,22 @@ func (c *Client) pageToTask(p page, projectNames map[string]string) *task.Task {
 		projectName = projectNames[p.Properties.Project.Relation[0].ID]
 	}
 
-	return task.NewTask(p.ID, name, projectName, dueDate, status)
+	t := task.NewTask(p.ID, name, projectName, dueDate, status)
+	// Map reading specific properties
+	if p.Properties.TaskType.Select != nil {
+		t.TaskType = p.Properties.TaskType.Select.Name
+	}
+	if p.Properties.StartDate.Date != nil && p.Properties.StartDate.Date.Start != "" {
+		t.StartDate = parseDueDate(p.Properties.StartDate.Date.Start)
+	}
+	if p.Properties.TotalPages.Number != nil {
+		t.TotalPages = int(*p.Properties.TotalPages.Number)
+	}
+	if p.Properties.ReadPages.Number != nil {
+		t.ReadPages = int(*p.Properties.ReadPages.Number)
+	}
+
+	return t
 }
 
 type queryResponse struct {
@@ -177,10 +228,14 @@ type page struct {
 }
 
 type properties struct {
-	TaskName titleProperty    `json:"Task name"`
-	Due      dateProperty     `json:"Due"`
-	Status   statusProperty   `json:"Status"`
-	Project  relationProperty `json:"Project"`
+	TaskName   titleProperty    `json:"Task name"`
+	Due        dateProperty     `json:"Due"`
+	Status     statusProperty   `json:"Status"`
+	Project    relationProperty `json:"Project"`
+	TaskType   selectProperty   `json:"タスク種別"`
+	StartDate  dateProperty     `json:"開始日"`
+	TotalPages numberProperty   `json:"総ページ数"`
+	ReadPages  numberProperty   `json:"読んだページ数"`
 }
 
 type relationProperty struct {
@@ -213,6 +268,18 @@ type statusProperty struct {
 
 type statusValue struct {
 	Name string `json:"name"`
+}
+
+type selectProperty struct {
+	Select *selectValue `json:"select"`
+}
+
+type selectValue struct {
+	Name string `json:"name"`
+}
+
+type numberProperty struct {
+	Number *float64 `json:"number"`
 }
 
 // Notion の日付形式をパースする。

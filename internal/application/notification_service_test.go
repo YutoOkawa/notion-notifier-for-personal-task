@@ -17,6 +17,10 @@ func (m *mockTaskRepo) FetchTasksWithUpcomingDeadlines(ctx context.Context, days
 	return m.tasks, m.err
 }
 
+func (m *mockTaskRepo) FetchIncompleteStudyTasks(ctx context.Context) ([]*task.Task, error) {
+	return m.tasks, m.err
+}
+
 type mockNotifier struct {
 	lastMessage string
 	err         error

@@ -17,4 +17,4 @@ data:
 
     notification:
       days_before: 3
-      check_schedule: "0 3 * * *"  # 毎日 UTC 03:00 (JST 12:00)
+      check_schedule: "0 9 * * *"  # 毎日 09:00 JST (JSTとして解釈される実装の場合)
