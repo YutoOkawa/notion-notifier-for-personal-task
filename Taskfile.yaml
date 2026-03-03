@@ -20,7 +20,7 @@ tasks:
     cmds:
       - echo "Tagging and pushing {{.REMOTE_IMAGE}}..."
       - docker tag {{.FULL_IMAGE_NAME}} {{.REMOTE_IMAGE}}
-      - docker save {{.REMOTE_IMAGE}} | ssh mac-mini.local "docker load && docker push {{.REMOTE_IMAGE}}"
+      - docker save {{.REMOTE_IMAGE}} | ssh mac-mini.local "docker load && docker tag {{.REMOTE_IMAGE}} {{.IMAGE_NAME}}:{{.VERSION}} && k3d image import {{.IMAGE_NAME}}:{{.VERSION}} -c mac-mini-cluster"
 
   apply:
     desc: Apply Kubernetes manifests

@@ -32,8 +32,7 @@ else
 fi
 
 # Inject version into kustomization.yaml
-# Replaces 'newTag: ...' with 'newTag: <VERSION>'
-sed -i '' "s/newTag: .*/newTag: $VERSION/" "$DIST_DIR/kustomization.yaml"
+sed -i '' "s@newTag: .*@newTag: $VERSION@" "$DIST_DIR/kustomization.yaml"
 
 echo "Applying manifests..."
 kubectl apply -k "$DIST_DIR"

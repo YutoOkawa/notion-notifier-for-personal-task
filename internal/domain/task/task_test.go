@@ -124,16 +124,16 @@ func TestTask_IsReadingPaceDelayed(t *testing.T) {
 			want:       false,
 		},
 		{
-			name:       "started today, read 0 pages (expected 30)",
+			name:       "started today, read 0 pages (expected 0)",
 			taskType:   "Study",
 			startDate:  &today,
 			totalPages: 100,
 			readPages:  0,
 			status:     StatusInProgress,
-			want:       true,
+			want:       false,
 		},
 		{
-			name:       "started today, read 30 pages (expected 30)",
+			name:       "started today, read 30 pages (expected 0)",
 			taskType:   "Study",
 			startDate:  &today,
 			totalPages: 100,
@@ -142,20 +142,20 @@ func TestTask_IsReadingPaceDelayed(t *testing.T) {
 			want:       false,
 		},
 		{
-			name:       "started yesterday, read 30 pages (expected 60)",
+			name:       "started yesterday, read 0 pages (expected 30)",
 			taskType:   "Study",
 			startDate:  &yesterday,
 			totalPages: 100,
-			readPages:  30,
+			readPages:  0,
 			status:     StatusInProgress,
 			want:       true,
 		},
 		{
-			name:       "started yesterday, read 60 pages (expected 60)",
+			name:       "started yesterday, read 30 pages (expected 30)",
 			taskType:   "Study",
 			startDate:  &yesterday,
 			totalPages: 100,
-			readPages:  60,
+			readPages:  30,
 			status:     StatusInProgress,
 			want:       false,
 		},
@@ -206,9 +206,9 @@ func TestTask_ExpectedReadPages(t *testing.T) {
 	}
 
 	expected := task.ExpectedReadPages()
-	// 2 days ago to today is 3 days (day 0, day 1, today). 3 * 30 = 90.
-	if expected != 90 {
-		t.Errorf("ExpectedReadPages() = %d, want %d", expected, 90)
+	// 2 days ago to today is 2 days. 2 * 30 = 60.
+	if expected != 60 {
+		t.Errorf("ExpectedReadPages() = %d, want %d", expected, 60)
 	}
 }
 

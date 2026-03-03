@@ -49,8 +49,8 @@ func (t *Task) ExpectedReadPages() int {
 		return 0
 	}
 
-	// 1日30ページ
-	expected := (elapsedDays + 1) * 30
+	// 1日30ページ (昨日までのノルマのみを計算)
+	expected := elapsedDays * 30
 	if expected > t.TotalPages && t.TotalPages > 0 {
 		return t.TotalPages
 	}

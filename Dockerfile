@@ -14,4 +14,5 @@ FROM gcr.io/distroless/static-debian12
 
 COPY --from=builder /usr/local/bin/notion-notifier /usr/local/bin/notion-notifier
 
-ENTRYPOINT ["/usr/local/bin/notion-notifier", "-config", "/etc/config/notion-notifier/config.yaml"]
+ENTRYPOINT ["/usr/local/bin/notion-notifier"]
+CMD ["-config", "/etc/config/notion-notifier/config.yaml"]
