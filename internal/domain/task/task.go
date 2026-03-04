@@ -35,30 +35,31 @@ func NewTask(id, name, projectName string, dueDate *time.Time, status Status) *T
 }
 
 func (t *Task) ExpectedReadPages() int {
-	if t.StartDate == nil {
-		return 0
-	}
-	startY, startM, startD := t.StartDate.Date()
-	nowY, nowM, nowD := time.Now().Date()
-
-	startDate := time.Date(startY, startM, startD, 0, 0, 0, 0, time.UTC)
-	today := time.Date(nowY, nowM, nowD, 0, 0, 0, 0, time.UTC)
-
-	elapsedDays := int(today.Sub(startDate).Hours() / 24)
-	if elapsedDays < 0 {
+	if t.DueDate == nil || t.TotalPages == 0 {
 		return 0
 	}
 
-	// 1日30ページ (昨日までのノルマのみを計算)
-	expected := elapsedDays * 30
-	if expected > t.TotalPages && t.TotalPages > 0 {
+	daysUntilDue := t.daysUntilDeadline()
+	if daysUntilDue < 0 {
+		// 締切を過ぎている場合は完了しているべき
+		return t.TotalPages
+	}
+
+	// 1日30ページペースで逆算
+	// 締切当日は TotalPages である必要がある
+	expected := t.TotalPages - (daysUntilDue * 30)
+
+	if expected < 0 {
+		return 0
+	}
+	if expected > t.TotalPages {
 		return t.TotalPages
 	}
 	return expected
 }
 
 func (t *Task) IsReadingPaceDelayed() bool {
-	if t.TaskType != "Study" || t.StartDate == nil || t.TotalPages == 0 {
+	if t.TaskType != "Study" || t.DueDate == nil || t.TotalPages == 0 {
 		return false
 	}
 	if t.Status == StatusDone || t.Status == StatusArchived {

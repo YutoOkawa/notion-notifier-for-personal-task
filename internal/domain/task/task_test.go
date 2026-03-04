@@ -102,13 +102,11 @@ func TestTask_IsOverdue(t *testing.T) {
 
 func TestTask_IsReadingPaceDelayed(t *testing.T) {
 	today := time.Now().Truncate(24 * time.Hour)
-	yesterday := today.Add(-24 * time.Hour)
-	twoDaysAgo := today.Add(-48 * time.Hour)
 
 	tests := []struct {
 		name       string
 		taskType   string
-		startDate  *time.Time
+		dueDate    *time.Time
 		totalPages int
 		readPages  int
 		status     Status
@@ -117,52 +115,52 @@ func TestTask_IsReadingPaceDelayed(t *testing.T) {
 		{
 			name:       "not study type",
 			taskType:   "Personal",
-			startDate:  &twoDaysAgo,
+			dueDate:    &today,
 			totalPages: 100,
 			readPages:  0,
 			status:     StatusInProgress,
 			want:       false,
 		},
 		{
-			name:       "started today, read 0 pages (expected 0)",
+			name:       "due today, read 70 pages (expected 100)",
 			taskType:   "Study",
-			startDate:  &today,
+			dueDate:    &today,
 			totalPages: 100,
-			readPages:  0,
-			status:     StatusInProgress,
-			want:       false,
-		},
-		{
-			name:       "started today, read 30 pages (expected 0)",
-			taskType:   "Study",
-			startDate:  &today,
-			totalPages: 100,
-			readPages:  30,
-			status:     StatusInProgress,
-			want:       false,
-		},
-		{
-			name:       "started yesterday, read 0 pages (expected 30)",
-			taskType:   "Study",
-			startDate:  &yesterday,
-			totalPages: 100,
-			readPages:  0,
+			readPages:  70,
 			status:     StatusInProgress,
 			want:       true,
 		},
 		{
-			name:       "started yesterday, read 30 pages (expected 30)",
+			name:       "due today, read 100 pages (expected 100)",
 			taskType:   "Study",
-			startDate:  &yesterday,
+			dueDate:    &today,
 			totalPages: 100,
-			readPages:  30,
+			readPages:  100,
 			status:     StatusInProgress,
 			want:       false,
 		},
 		{
+			name:       "due tomorrow, read 70 pages (expected 70)",
+			taskType:   "Study",
+			dueDate:    timePtr(today.Add(24 * time.Hour)),
+			totalPages: 100,
+			readPages:  70,
+			status:     StatusInProgress,
+			want:       false,
+		},
+		{
+			name:       "due tomorrow, read 40 pages (expected 70)",
+			taskType:   "Study",
+			dueDate:    timePtr(today.Add(24 * time.Hour)),
+			totalPages: 100,
+			readPages:  40,
+			status:     StatusInProgress,
+			want:       true,
+		},
+		{
 			name:       "done task is not delayed",
 			taskType:   "Study",
-			startDate:  &twoDaysAgo,
+			dueDate:    &today,
 			totalPages: 100,
 			readPages:  30,
 			status:     StatusDone,
@@ -171,7 +169,7 @@ func TestTask_IsReadingPaceDelayed(t *testing.T) {
 		{
 			name:       "read pages meets total pages (not delayed)",
 			taskType:   "Study",
-			startDate:  &twoDaysAgo,
+			dueDate:    timePtr(today.Add(2 * 24 * time.Hour)),
 			totalPages: 50,
 			readPages:  50,
 			status:     StatusInProgress,
@@ -183,7 +181,7 @@ func TestTask_IsReadingPaceDelayed(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			task := &Task{
 				TaskType:   tt.taskType,
-				StartDate:  tt.startDate,
+				DueDate:    tt.dueDate,
 				TotalPages: tt.totalPages,
 				ReadPages:  tt.readPages,
 				Status:     tt.status,
@@ -198,17 +196,24 @@ func TestTask_IsReadingPaceDelayed(t *testing.T) {
 
 func TestTask_ExpectedReadPages(t *testing.T) {
 	today := time.Now().Truncate(24 * time.Hour)
-	twoDaysAgo := today.Add(-48 * time.Hour)
+	tomorrow := today.Add(24 * time.Hour)
 
 	task := &Task{
-		StartDate:  &twoDaysAgo,
+		DueDate:    &tomorrow,
 		TotalPages: 100,
 	}
 
 	expected := task.ExpectedReadPages()
-	// 2 days ago to today is 2 days. 2 * 30 = 60.
-	if expected != 60 {
-		t.Errorf("ExpectedReadPages() = %d, want %d", expected, 60)
+	// Tomorrow is 1 day until due. 100 - (1 * 30) = 70.
+	if expected != 70 {
+		t.Errorf("ExpectedReadPages() = %d, want %d", expected, 70)
+	}
+
+	task.DueDate = &today
+	expected = task.ExpectedReadPages()
+	// Today is 0 days until due. 100 - (0 * 30) = 100.
+	if expected != 100 {
+		t.Errorf("ExpectedReadPages() = %d, want %d", expected, 100)
 	}
 }
 
